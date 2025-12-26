@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Linked-list Allocation — Interactive Simulator</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#7c3aed;--accent-2:#06b6d4;--glass:rgba(255,255,255,0.03)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#071024 0%, #0f1b2b 100%);color:#e6eef8;padding:28px}
+  h1{margin:0 0 10px;font-weight:600;color:#eaf2ff}
+  p.lead{color:var(--muted);margin-top:6px}
+  .app{display:flex;gap:24px;align-items:flex-start}
+  .memory{width:420px;background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,.6);border:1px solid rgba(255,255,255,0.03)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 10px;text-align:center;font-variant-numeric:tabular-nums}
+  thead th{font-size:13px;color:#cfe6ff;opacity:.9}
+  tbody td{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-bottom:1px solid rgba(255,255,255,0.03);color:#d8e9ff}
+  tbody td.blocknum{width:64px;text-align:left;padding-left:12px;color:var(--muted)}
+  tbody td.next{width:80px}
+  tr.highlight td{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(6,182,212,0.08));color:#fff}
+  .right{flex:1}
+  .controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  .btn{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);color:#eaf2ff;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn.primary{background:linear-gradient(180deg,var(--accent),#5b21b6);box-shadow:0 6px 18px rgba(124,58,237,.18)}
+  .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,0.04)}
+  .files{display:flex;flex-direction:column;gap:12px}
+  .file-card{background:var(--glass);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  .file-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .chain{display:flex;gap:8px;flex-wrap:wrap}
+  .node{min-width:56px;padding:8px;border-radius:8px;background:linear-gradient(180deg,#07182b,#062036);border:1px solid rgba(255,255,255,0.04);color:#cfe6ff;display:flex;flex-direction:column;align-items:center}
+  .node .idx{font-size:12px;color:var(--muted)}
+  .node .next{font-weight:600;margin-top:6px}
+  .node.current{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;transform:translateY(-6px);box-shadow:0 10px 30px rgba(6,182,212,.12)}
+  .controls-row{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+  .small{font-size:13px;color:var(--muted)}
+  .footer-note{margin-top:16px;color:var(--muted);font-size:13px}
+  .select{padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf2ff}
+  .speed{width:120px}
+  .legend{display:flex;gap:8px;align-items:center}
+  .legend .box{width:14px;height:14px;border-radius:4px}
+  .legend .h1{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .legend .h2{background:#0b1220;border:1px solid rgba(255,255,255,0.04)}
+</style>
+</head>
+<body>
+  <h1>Linked-list Allocation — Interactive Simulator</h1>
+  <p class="lead">Таны өгсөн файлуудын мэдээлэл дээр тулгуурласан симуляци. Файлыг сонгоод "Next"/"Prev" эсвэл Play-г дарж блокуудаар алхна.</p>
+
+  <div class="app">
+    <div class="memory">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <strong style="color:#fff">Physical Blocks</strong>
+          <div class="small">Index — pointer to next block (-1 = end)</div>
+        </div>
+        <div class="legend">
+          <div class="box h1"></div><div class="small">current</div>
+        </div>
+      </div>
+
+      <table id="mem-table">
+        <thead>
+          <tr><th>Block #</th><th>Next</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="footer-note">Тутам мөрөн дээр дарвал тухайн блокыг сонгож болно.</div>
+    </div>
+
+    <div class="right">
+      <div class="controls-row">
+        <select id="fileSelect" class="select"></select>
+        <button id="resetBtn" class="btn ghost">Reset</button>
+        <div style="flex:1"></div>
+        <label class="small">Speed</label>
+        <input id="speed" class="speed" type="range" min="200" max="1600" value="800">
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" class="btn">Prev</button>
+        <button id="playBtn" class="btn primary">Play</button>
+        <button id="nextBtn" class="btn">Next</button>
+        <div style="flex:1"></div>
+        <div class="small">Step: <span id="stepInfo">0</span></div>
+      </div>
+
+      <div class="files" id="filesContainer"></div>
+
+    </div>
+  </div>
+
+<script>
+
+const mem = [5,21,24,18,14,-1,12,-1,-1,29,0,27,16,9,17,-1,-1,1,19,13,23,-1,2,11,10,26,-1,28,8,15];
+
+const files = {
+  'A': {start: 22, size: 6},
+  'B': {start: 4, size: 5},
+  'C': {start: 6, size: 3},
+  'D': {start: 3, size: 7},
+  'E': {start: 20, size: 6},
+  'F': {start: 25, size: 2}
+};
+
+const tbody = document.querySelector('#mem-table tbody');
+const filesContainer = document.getElementById('filesContainer');
+const fileSelect = document.getElementById('fileSelect');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const playBtn = document.getElementById('playBtn');
+const resetBtn = document.getElementById('resetBtn');
+const speedInput = document.getElementById('speed');
+const stepInfo = document.getElementById('stepInfo');
+
+let currentFile = null;
+let currentChain = [];
+let currentStep = -1;
+let playing = false;
+let timer = null;
+
+function buildMemTable(){
+  tbody.innerHTML='';
+  for(let i=0;i<mem.length;i++){
+    const tr = document.createElement('tr');
+    tr.dataset.idx = i;
+    const td1 = document.createElement('td'); td1.className='blocknum'; td1.textContent = i;
+    const td2 = document.createElement('td'); td2.className='next'; td2.textContent = mem[i];
+    tr.appendChild(td1); tr.appendChild(td2);
+    tr.addEventListener('click',()=>{
+      highlightIndex(i);
+      const f = findFileContaining(i);
+      if(f) selectFile(f);
+    });
+    tbody.appendChild(tr);
+  }
+}
+
+function renderFiles(){
+  filesContainer.innerHTML='';
+  fileSelect.innerHTML='';
+  for(const k of Object.keys(files)){
+    const opt = document.createElement('option'); opt.value = k; opt.textContent = k+" ("+files[k].size+" blocks, start: "+files[k].start+")";
+    fileSelect.appendChild(opt);
+
+    const div = document.createElement('div'); div.className='file-card'; div.id='file-'+k;
+    const title = document.createElement('div'); title.className='file-title';
+    title.innerHTML = `<div><strong>Файл ${k}</strong> <span class="small">(${files[k].size} блок)</span></div><div class='small'>эхлэл: ${files[k].start}</div>`;
+    div.appendChild(title);
+    const chain = document.createElement('div'); chain.className='chain'; chain.id='chain-'+k;
+    div.appendChild(chain);
+    filesContainer.appendChild(div);
+  }
+}
+
+function buildChainForFile(name){
+  const chain = [];
+  let ptr = files[name].start;
+  const visited = new Set();
+  while(ptr!==-1 && !visited.has(ptr) && chain.length < 200){
+    chain.push(ptr);
+    visited.add(ptr);
+    ptr = mem[ptr];
+  }
+  return chain;
+}
+
+function paintAllChains(){
+  for(const k of Object.keys(files)){
+    const chain = buildChainForFile(k);
+    const container = document.getElementById('chain-'+k);
+    container.innerHTML='';
+    chain.forEach((idx,i)=>{
+      const node = document.createElement('div'); node.className='node'; node.id=`node-${k}-${idx}`;
+      node.innerHTML = `<div class='idx'>#${idx}</div><div class='next'>→ ${mem[idx] === -1 ? 'END' : mem[idx]}</div>`;
+      container.appendChild(node);
+    });
+  }
+}
+
+function selectFile(name){
+  currentFile = name;
+  currentChain = buildChainForFile(name);
+  currentStep = -1;
+  stepInfo.textContent = '0 / ' + currentChain.length;
+  highlightAll();
+}
+
+function highlightIndex(idx){
+  document.querySelectorAll('tr').forEach(tr=>tr.classList.remove('highlight'));
+  const tr = document.querySelector(`tr[data-idx='${idx}']`);
+  if(tr) tr.classList.add('highlight');
+}
+
+function highlightAll(){
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('current'));
+  document.querySelectorAll('tr').forEach(tr=>tr.classList.remove('highlight'));
+  if(!currentFile) return;
+  currentChain.forEach((idx,i)=>{
+    const node = document.getElementById(`node-${currentFile}-${idx}`);
+    if(node) node.classList.remove('current');
+  });
+}
+
+function stepTo(s){
+  if(!currentFile) return;
+  if(s < 0) s = 0;
+  if(s >= currentChain.length) s = currentChain.length - 1;
+  currentStep = s;
+  highlightAll();
+  const idx = currentChain[currentStep];
+  const node = document.getElementById(`node-${currentFile}-${idx}`);
+  if(node) node.classList.add('current');
+  highlightIndex(idx);
+  stepInfo.textContent = (currentStep+1) + ' / ' + currentChain.length;
+}
+
+function next(){ if(!currentFile) return; if(currentStep < currentChain.length-1) stepTo(currentStep+1); }
+function prev(){ if(!currentFile) return; if(currentStep > 0) stepTo(currentStep-1); }
+
+function play(){
+  if(!currentFile) return;
+  playing = true; playBtn.textContent='Pause'; playBtn.classList.add('primary');
+  const interval = Math.max(80,1600 - Number(speedInput.value));
+  timer = setInterval(()=>{
+    if(currentStep < currentChain.length-1){ next(); } else { pause(); }
+  }, interval);
+}
+function pause(){ playing=false; playBtn.textContent='Play'; playBtn.classList.remove('primary'); clearInterval(timer); timer=null; }
+function findFileContaining(idx){
+  for(const k of Object.keys(files)){
+    const chain = buildChainForFile(k);
+    if(chain.includes(idx)) return k;
+  }
+  return null;
+}
+
+fileSelect.addEventListener('change', ()=>{ selectFile(fileSelect.value); });
+nextBtn.addEventListener('click', ()=>{ next(); });
+prevBtn.addEventListener('click', ()=>{ prev(); });
+playBtn.addEventListener('click', ()=>{ if(playing) pause(); else play(); });
+resetBtn.addEventListener('click', ()=>{ pause(); if(currentFile) selectFile(currentFile); else {fileSelect.selectedIndex=0; selectFile(fileSelect.value);} });
+speedInput.addEventListener('input', ()=>{ if(playing){ pause(); play(); }});
+
+buildMemTable(); renderFiles(); paintAllChains();
+Object.keys(files).forEach((k,i)=>{ if(i===0) fileSelect.value=k; });
+selectFile(fileSelect.value);
+
+window.addEventListener('keydown',(e)=>{
+  if(e.key==='ArrowRight') next(); if(e.key==='ArrowLeft') prev(); if(e.key===' ') { e.preventDefault(); if(playing) pause(); else play(); }
+});
+</script>
+</body>
+</html>

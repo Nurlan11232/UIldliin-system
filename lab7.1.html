@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виртуаль ⟷ Физик хаяг хөрвүүлэгч</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .config-section {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .page-table {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover td {
+            background-color: #f5f5f5;
+        }
+
+        .binary-display {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .binary-display .label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .binary-display .value {
+            font-size: 16px;
+            color: #667eea;
+            letter-spacing: 2px;
+        }
+
+        .bit-explanation {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .bit-part {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .bit-page {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 2px solid #1565c0;
+        }
+
+        .bit-offset {
+            background: #fff3e0;
+            color: #e65100;
+            border: 2px solid #e65100;
+        }
+
+        .bit-frame {
+            background: #f3e5f5;
+            color: #6a1b9a;
+            border: 2px solid #6a1b9a;
+        }
+
+        .result-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .result-box h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .result-item .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-item .value {
+            font-family: 'Courier New', monospace;
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .info-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        .valid-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .valid-yes {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .valid-no {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Виртуаль ⟷ Физик хаяг хөрвүүлэгч</h1>
+            <p>Virtual to Physical Address Translator with Page Table</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Configuration Section -->
+            <div class="card">
+                <h2>⚙️ Тохиргоо</h2>
+                
+                <div class="config-section">
+                    <div class="form-group">
+                        <label>Виртуаль хаягийн бит (Virtual Address Bits):</label>
+                        <input type="number" id="virtualBits" value="16" min="8" max="32">
+                        <small>Виртуаль хаягийн нийт битийн тоо (8-32)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Хуудасны хэмжээ (Page Size):</label>
+                        <select id="pageSize">
+                            <option value="256">256 bytes (8 bits offset)</option>
+                            <option value="512">512 bytes (9 bits offset)</option>
+                            <option value="1024" selected>1 KB (10 bits offset)</option>
+                            <option value="2048">2 KB (11 bits offset)</option>
+                            <option value="4096">4 KB (12 bits offset)</option>
+                            <option value="8192">8 KB (13 bits offset)</option>
+                        </select>
+                        <small>Нэг хуудасны хэмжээ</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Физик санах ойн хэмжээ (Physical Memory):</label>
+                        <select id="physicalMemory">
+                            <option value="16">16 KB</option>
+                            <option value="32">32 KB</option>
+                            <option value="64" selected>64 KB</option>
+                            <option value="128">128 KB</option>
+                            <option value="256">256 KB</option>
+                        </select>
+                        <small>Нийт физик санах ойн хэмжээ</small>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-success" onclick="generatePageTable()">📋 Хүснэгт үүсгэх</button>
+                        <button class="btn-secondary" onclick="resetConfig()">↻ Reset</button>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>📊 Тооцоолол:</h4>
+                    <ul id="calculations"></ul>
+                </div>
+
+                <!-- Page Table -->
+                <div class="page-table" id="pageTableSection" style="display: none;">
+                    <h3>Хуудасны хүснэгт (Page Table)</h3>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table id="pageTableDisplay"></table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Translation Section -->
+            <div class="card">
+                <h2>🔍 Хаяг хөрвүүлэх</h2>
+
+                <div class="form-group">
+                    <label>Виртуаль хаяг оруулах (Decimal):</label>
+                    <input type="number" id="virtualAddress" placeholder="Жишээ: 1234" min="0">
+                    <small>Аравтын тооллоор оруулна уу</small>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="translateAddress()">→ Физик хаяг руу хөрвүүлэх</button>
+                </div>
+
+                <div id="translationResult"></div>
+
+                <div class="info-box" style="margin-top: 30px;">
+                    <h4>📝 Хэрхэн ажилладаг вэ?</h4>
+                    <ul>
+                        <li><strong>Виртуаль хаяг</strong> = Хуудасны дугаар + Offset</li>
+                        <li><strong>Хуудасны хүснэгт</strong> хуудасны дугаарыг фрэймийн дугаар руу хөрвүүлнэ</li>
+                        <li><strong>Физик хаяг</strong> = Фрэймийн дугаар + Offset</li>
+                        <li>Valid bit = 1 бол хуудас санах ойд байна</li>
+                        <li>Valid bit = 0 бол Page Fault гарна</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pageTable = [];
+        let offsetBits = 10;
+        let pageBits = 6;
+        let frameCount = 0;
+
+        function generatePageTable() {
+            const virtualBits = parseInt(document.getElementById('virtualBits').value);
+            const pageSize = parseInt(document.getElementById('pageSize').value);
+            const physicalMemory = parseInt(document.getElementById('physicalMemory').value) * 1024; // Convert to bytes
+
+            // Calculate offset bits
+            offsetBits = Math.log2(pageSize);
+            
+            // Calculate page number bits
+            pageBits = virtualBits - offsetBits;
+            
+            // Calculate number of pages
+            const pageCount = Math.pow(2, pageBits);
+            
+            // Calculate frame count
+            frameCount = Math.floor(physicalMemory / pageSize);
+            
+            // Display calculations
+            const calcDiv = document.getElementById('calculations');
+            calcDiv.innerHTML = `
+                <li>Offset битүүд: <strong>${offsetBits}</strong> бит</li>
+                <li>Хуудасны дугаарын битүүд: <strong>${pageBits}</strong> бит</li>
+                <li>Нийт хуудасны тоо: <strong>${pageCount}</strong></li>
+                <li>Нийт фрэймийн тоо: <strong>${frameCount}</strong></li>
+                <li>Хуудасны хэмжээ: <strong>${pageSize}</strong> bytes</li>
+            `;
+
+            // Generate random page table
+            pageTable = [];
+            for (let i = 0; i < pageCount; i++) {
+                const valid = Math.random() > 0.3; // 70% valid
+                const frame = valid ? Math.floor(Math.random() * frameCount) : 0;
+                pageTable.push({ pageNumber: i, frameNumber: frame, valid: valid });
+            }
+
+            // Display page table
+            displayPageTable();
+            document.getElementById('pageTableSection').style.display = 'block';
+        }
+
+        function displayPageTable() {
+            const table = document.getElementById('pageTableDisplay');
+            let html = `
+                <thead>
+                    <tr>
+                        <th>Хуудасны дугаар</th>
+                        <th>Фрэймийн дугаар</th>
+                        <th>Valid Bit</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            pageTable.forEach(entry => {
+                html += `
+                    <tr>
+                        <td>${entry.pageNumber}</td>
+                        <td>${entry.valid ? entry.frameNumber : '-'}</td>
+                        <td><span class="valid-badge ${entry.valid ? 'valid-yes' : 'valid-no'}">${entry.valid ? 'Valid (1)' : 'Invalid (0)'}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function translateAddress() {
+            if (pageTable.length === 0) {
+                alert('Эхлээд хуудасны хүснэгт үүсгэнэ үү!');
+                return;
+            }
+
+            const virtualAddr = parseInt(document.getElementById('virtualAddress').value);
+            
+            if (isNaN(virtualAddr) || virtualAddr < 0) {
+                alert('Хүчинтэй виртуаль хаяг оруулна уу!');
+                return;
+            }
+
+            const maxVirtualAddr = Math.pow(2, pageBits + offsetBits) - 1;
+            if (virtualAddr > maxVirtualAddr) {
+                alert(`Виртуаль хаяг хэтэрхий том байна! Максимум: ${maxVirtualAddr}`);
+                return;
+            }
+
+            // Extract page number and offset
+            const offsetMask = (1 << offsetBits) - 1;
+            const offset = virtualAddr & offsetMask;
+            const pageNumber = virtualAddr >> offsetBits;
+
+            // Look up page table
+            const pageEntry = pageTable[pageNumber];
+            
+            if (!pageEntry) {
+                alert('Хуудасны дугаар хүчингүй байна!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('translationResult');
+            
+            if (!pageEntry.valid) {
+                // Page fault
+                resultDiv.innerHTML = `
+                    <div style="background: #ffebee; border: 2px solid #c62828; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <h3 style="color: #c62828;">❌ Page Fault!</h3>
+                        <p style="margin-top: 10px; color: #333;">Хуудас ${pageNumber} санах ойд байхгүй байна.</p>
+                        <p style="margin-top: 5px; color: #666;">Valid bit = 0</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate physical address
+            const frameNumber = pageEntry.frameNumber;
+            const physicalAddr = (frameNumber << offsetBits) | offset;
+
+            // Convert to binary
+            const virtualBinary = virtualAddr.toString(2).padStart(pageBits + offsetBits, '0');
+            const pageBinary = pageNumber.toString(2).padStart(pageBits, '0');
+            const offsetBinary = offset.toString(2).padStart(offsetBits, '0');
+            const frameBinary = frameNumber.toString(2).padStart(Math.ceil(Math.log2(frameCount)), '0');
+            const physicalBinary = physicalAddr.toString(2).padStart(Math.ceil(Math.log2(frameCount)) + offsetBits, '0');
+
+            resultDiv.innerHTML = `
+                <div class="result-box">
+                    <h3>✅ Амжилттай хөрвүүллээ!</h3>
+                    
+                    <div class="binary-display">
+                        <div class="label">Виртуаль хаяг:</div>
+                        <div class="value">${virtualAddr} (decimal) = ${virtualBinary} (binary)</div>
+                        <div class="bit-explanation">
+                            <div class="bit-part bit-page">Хуудас: ${pageBinary} = ${pageNumber}</div>
+                            <div class="bit-part bit-offset">Offset: ${offsetBinary} = ${offset}</div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin: 20px 0; font-size: 24px; color: #667eea;">
+                        ↓ Хуудасны хүснэгт ашиглан ↓
+                    </div>
+
+                    <div class="result-item">
+                        <span class="label">Хуудасны дугаар:</span>
+                        <span class="value">${pageNumber}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Фрэймийн дугаар:</span>
+                        <span class="value">${frameNumber}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Offset:</span>
+                        <span class="value">${offset}</span>
+                    </div>
+
+                    <div class="binary-display" style="margin-top: 20px;">
+                        <div class="label">Физик хаяг:</div>
+                        <div class="value">${physicalAddr} (decimal) = ${physicalBinary} (binary)</div>
+                        <div class="bit-explanation">
+                            <div class="bit-part bit-frame">Фрэйм: ${frameBinary} = ${frameNumber}</div>
+                            <div class="bit-part bit-offset">Offset: ${offsetBinary} = ${offset}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetConfig() {
+            document.getElementById('virtualBits').value = 16;
+            document.getElementById('pageSize').value = 1024;
+            document.getElementById('physicalMemory').value = 64;
+            document.getElementById('virtualAddress').value = '';
+            document.getElementById('pageTableSection').style.display = 'none';
+            document.getElementById('translationResult').innerHTML = '';
+            document.getElementById('calculations').innerHTML = '';
+            pageTable = [];
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            generatePageTable();
+        };
+    </script>
+</body>
+</html>

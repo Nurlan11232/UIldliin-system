@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS Bie Daalt</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+  }
+
+  .slideshow-container {
+    position: relative;
+    width: 100%;
+    max-width: 2000px;
+    height: 105vh;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .slide-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    position: absolute;
+    transition: opacity 0.5s ease-in-out;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  img.active {
+    opacity: 1;
+    position: relative;
+  }
+
+  .controls {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    z-index: 100;
+  }
+
+  button {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #667eea;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .arrow-btn {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+  }
+
+  /* ========== SIMULATION STYLES ========== */
+  #simContainer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 1400px;
+    display: none;
+  }
+
+  #simContainer.active {
+    display: block;
+  }
+
+  .sim-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  #startSimBtn {
+    font-size: 18px;
+    padding: 15px 50px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #667eea;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  #startSimBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .algorithm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+
+  .algorithm-section {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .algorithm-section h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 24px;
+  }
+
+  .algorithm-section p {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+
+  /* Gantt Chart Container */
+  .gantt-container {
+    position: relative;
+    padding-left: 60px;
+    padding-bottom: 40px;
+  }
+
+  /* Y-axis labels (Process names) */
+  .y-axis {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50px;
+  }
+
+  .y-label {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: #333;
+  }
+
+  /* Chart area with grid */
+  .chart-area {
+    position: relative;
+    height: 200px;
+    background: #f9f9f9;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+  }
+
+  /* X-axis (Time) */
+  .x-axis {
+    position: absolute;
+    bottom: -35px;
+    left: 0;
+    right: 0;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 5px;
+  }
+
+  .x-label {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+
+  /* Process block - Gantt bar */
+  .gantt-block {
+    position: absolute;
+    height: 40px;
+    background: #ccc;
+    border: 2px solid #333;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #000;
+    transition: left 0.02s linear;
+  }
+
+  /* Process rows */
+  .process-row-A { top: 10px; }
+  .process-row-B { top: 60px; }
+  .process-row-C { top: 110px; }
+  .process-row-D { top: 160px; }
+</style>
+</head>
+<body>
+<div class="slideshow-container">
+  <div class="slide-content" id="slideContent"></div>
+</div>
+
+<div id="simContainer">
+  <div class="sim-header">
+    <button id="startSimBtn">START Simulation</button>
+  </div>
+
+  <div class="algorithm-grid" id="algorithmGrid">
+  </div>
+</div>
+<div class="controls">
+  <button class="arrow-btn" id="prev" onclick="prevSlide()">←</button>
+  <div class="slide-counter">
+    <span id="currentSlide">1</span> / <span id="totalSlides">26</span>
+  </div>
+  <button class="arrow-btn" id="next" onclick="nextSlide()">→</button>
+</div>
+<script>
+let totalSlides = 26;
+let current = 0;
+let slidesContainer = document.getElementById('slideContent');
+for(let i = 1; i <= totalSlides; i++){
+    let img = document.createElement('img');
+    img.src = `slide${i}.png`;
+    img.alt = `Slide ${i}`;
+    if(i === 1) img.classList.add('active');
+    slidesContainer.appendChild(img);
+}
+let slides = document.querySelectorAll('img');
+function updateCounter() {
+  document.getElementById('currentSlide').textContent = current + 1;
+}
+function showSlide(index){
+  slides.forEach((s) => s.classList.remove('active'));
+  slides[index].classList.add('active');
+  updateCounter();
+  const simContainer = document.getElementById("simContainer");
+  if (index === 16 || index === 17) {
+      simContainer.classList.add('active');
+      loadSimulationForSlide(index);
+  } else {
+      simContainer.classList.remove('active');
+  }
+}
+function nextSlide(){
+  current = (current + 1) % slides.length;
+  showSlide(current);
+}
+function prevSlide(){
+  current = (current - 1 + slides.length) % slides.length;
+  showSlide(current);
+}
+document.addEventListener('keydown', function(e) {
+  if(e.key === 'ArrowRight') nextSlide();
+  if(e.key === 'ArrowLeft') prevSlide();
+});
+
+let touchStartX = 0;
+let touchEndX = 0;
+document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
+document.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
+
+function handleSwipe() {
+  if(touchEndX < touchStartX - 50) nextSlide();
+  if(touchEndX > touchStartX + 50) prevSlide();
+}
+
+
+function loadSimulationForSlide(slideIndex) {
+  const grid = document.getElementById('algorithmGrid');
+  grid.innerHTML = '';
+
+  if (slideIndex === 16) {
+    // Slide 17: SJF and Round Robin
+    grid.innerHTML = `
+      <div class="algorithm-section">
+        <h2>Short job first</h2>
+        <p>Хамгийн богино алхатай процесс хамгийн эхэнд дуусдаг процесс юм</p>
+        <div class="gantt-container">
+          <div class="y-axis">
+            <div class="y-label">A</div>
+            <div class="y-label">B</div>
+            <div class="y-label">C</div>
+            <div class="y-label">D</div>
+          </div>
+          <div class="chart-area" id="sjfChart"></div>
+          <div class="x-axis">
+            <span class="x-label">0</span>
+            <span class="x-label">2</span>
+            <span class="x-label">4</span>
+            <span class="x-label">6</span>
+            <span class="x-label">8</span>
+            <span class="x-label">10</span>
+            <span class="x-label">12</span>
+            <span class="x-label">14</span>
+            <span class="x-label">16</span>
+            <span class="x-label">18</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="algorithm-section">
+        <h2>Round robin</h2>
+        <p>Тодорхой агшин тутамд процессыг сольж байдаг процесс юм</p>
+        <div class="gantt-container">
+          <div class="y-axis">
+            <div class="y-label">A</div>
+            <div class="y-label">B</div>
+            <div class="y-label">C</div>
+            <div class="y-label">D</div>
+          </div>
+          <div class="chart-area" id="rrChart"></div>
+          <div class="x-axis">
+            <span class="x-label">0</span>
+            <span class="x-label">2</span>
+            <span class="x-label">4</span>
+            <span class="x-label">6</span>
+            <span class="x-label">8</span>
+            <span class="x-label">10</span>
+            <span class="x-label">12</span>
+            <span class="x-label">14</span>
+            <span class="x-label">16</span>
+            <span class="x-label">18</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (slideIndex === 17) {
+    // Slide 18: FIFO and Priority
+    grid.innerHTML = `
+      <div class="algorithm-section">
+        <h2>FIFO</h2>
+        <p>Хамгийн эхэнд ирсэн процесс хамгийн эхэнд гарах процесс юм</p>
+        <div class="gantt-container">
+          <div class="y-axis">
+            <div class="y-label">A</div>
+            <div class="y-label">B</div>
+            <div class="y-label">C</div>
+            <div class="y-label">D</div>
+          </div>
+          <div class="chart-area" id="fifoChart"></div>
+          <div class="x-axis">
+            <span class="x-label">0</span>
+            <span class="x-label">2</span>
+            <span class="x-label">4</span>
+            <span class="x-label">6</span>
+            <span class="x-label">8</span>
+            <span class="x-label">10</span>
+            <span class="x-label">12</span>
+            <span class="x-label">14</span>
+            <span class="x-label">16</span>
+            <span class="x-label">18</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="algorithm-section">
+        <h2>Priority</h2>
+        <p>Давуу эрхийн арга хэрэглэгч өөрийн хүссэнээр процессуудаа хуваарилж болно</p>
+        <div class="gantt-container">
+          <div class="y-axis">
+            <div class="y-label">A</div>
+            <div class="y-label">B</div>
+            <div class="y-label">C</div>
+            <div class="y-label">D</div>
+          </div>
+          <div class="chart-area" id="priorityChart"></div>
+          <div class="x-axis">
+            <span class="x-label">0</span>
+            <span class="x-label">2</span>
+            <span class="x-label">4</span>
+            <span class="x-label">6</span>
+            <span class="x-label">8</span>
+            <span class="x-label">10</span>
+            <span class="x-label">12</span>
+            <span class="x-label">14</span>
+            <span class="x-label">16</span>
+            <span class="x-label">18</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Process colors
+const colors = {
+  A: '#f99',
+  B: '#9cf',
+  C: '#fc9',
+  D: '#9f9'
+};
+
+function createGanttBlock(container, process, row, startTime, duration) {
+  const block = document.createElement('div');
+  block.className = `gantt-block process-row-${row}`;
+  block.style.background = colors[process];
+  block.style.left = (startTime * 30) + 'px'; // 30px per time unit
+  block.style.width = (duration * 30) + 'px';
+  block.textContent = process;
+  container.appendChild(block);
+  return block;
+}
+
+function animateGanttBlock(block, startTime, duration) {
+  return new Promise(resolve => {
+    const targetLeft = startTime * 30;
+    const targetWidth = duration * 30;
+    
+    block.style.width = '0px';
+    block.style.left = targetLeft + 'px';
+    
+    let currentWidth = 0;
+    const step = 3;
+    
+    function grow() {
+      if (currentWidth < targetWidth) {
+        currentWidth += step;
+        block.style.width = Math.min(currentWidth, targetWidth) + 'px';
+        requestAnimationFrame(grow);
+      } else {
+        resolve();
+      }
+    }
+    grow();
+  });
+}
+
+async function runSJF() {
+  const chart = document.getElementById('sjfChart');
+  chart.innerHTML = '';
+  
+  // B(1), C(3), D(4), A(10)
+  const schedule = [
+    { process: 'B', row: 'B', start: 0, duration: 1 },
+    { process: 'C', row: 'C', start: 1, duration: 3 },
+    { process: 'D', row: 'D', start: 4, duration: 4 },
+    { process: 'A', row: 'A', start: 8, duration: 10 }
+  ];
+  
+  for (let item of schedule) {
+    const block = createGanttBlock(chart, item.process, item.row, item.start, item.duration);
+    await animateGanttBlock(block, item.start, item.duration);
+  }
+}
+
+async function runRoundRobin() {
+  const chart = document.getElementById('rrChart');
+  chart.innerHTML = '';
+  
+  // Time quantum = 1, rotate A,B,C,D
+  const schedule = [
+    { process: 'A', row: 'A', start: 0, duration: 1 },
+    { process: 'B', row: 'B', start: 1, duration: 1 },
+    { process: 'C', row: 'C', start: 2, duration: 1 },
+    { process: 'D', row: 'D', start: 3, duration: 1 },
+    { process: 'A', row: 'A', start: 4, duration: 1 },
+    { process: 'C', row: 'C', start: 5, duration: 1 },
+    { process: 'D', row: 'D', start: 6, duration: 1 },
+    { process: 'A', row: 'A', start: 7, duration: 1 },
+    { process: 'C', row: 'C', start: 8, duration: 1 },
+    { process: 'D', row: 'D', start: 9, duration: 1 },
+    { process: 'A', row: 'A', start: 10, duration: 1 },
+    { process: 'D', row: 'D', start: 11, duration: 1 },
+    { process: 'A', row: 'A', start: 12, duration: 6 }
+  ];
+  
+  for (let item of schedule) {
+    const block = createGanttBlock(chart, item.process, item.row, item.start, item.duration);
+    await animateGanttBlock(block, item.start, item.duration);
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
+
+async function runFIFO() {
+  const chart = document.getElementById('fifoChart');
+  chart.innerHTML = '';
+  
+  // A, B, C, D in order
+  const schedule = [
+    { process: 'A', row: 'A', start: 0, duration: 10 },
+    { process: 'B', row: 'B', start: 10, duration: 1 },
+    { process: 'C', row: 'C', start: 11, duration: 3 },
+    { process: 'D', row: 'D', start: 14, duration: 4 }
+  ];
+  
+  for (let item of schedule) {
+    const block = createGanttBlock(chart, item.process, item.row, item.start, item.duration);
+    await animateGanttBlock(block, item.start, item.duration);
+  }
+}
+
+async function runPriority() {
+  const chart = document.getElementById('priorityChart');
+  chart.innerHTML = '';
+  
+  // D, C, B, A (priority order)
+  const schedule = [
+    { process: 'D', row: 'D', start: 0, duration: 4 },
+    { process: 'C', row: 'C', start: 4, duration: 3 },
+    { process: 'B', row: 'B', start: 7, duration: 1 },
+    { process: 'A', row: 'A', start: 8, duration: 10 }
+  ];
+  
+  for (let item of schedule) {
+    const block = createGanttBlock(chart, item.process, item.row, item.start, item.duration);
+    await animateGanttBlock(block, item.start, item.duration);
+  }
+}
+
+document.getElementById('startSimBtn').onclick = async function() {
+  this.disabled = true;
+  this.textContent = 'Running...';
+  
+  if (current === 16) {
+    await Promise.all([runSJF(), runRoundRobin()]);
+  } else if (current === 17) {
+    await Promise.all([runFIFO(), runPriority()]);
+  }
+  
+  this.disabled = false;
+  this.textContent = 'START Simulation';
+};
+</script>
+
+</body>
+</html
